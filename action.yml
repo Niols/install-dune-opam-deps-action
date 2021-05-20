@@ -1,0 +1,21 @@
+name: 'Install Dune/OPAM Dependencies'
+description: 'GitHub Action to install the Dune/OPAM dependencies of a project'
+author: 'Nicolas “Niols” Jeannerod <niols@niols.fr>'
+
+branding:
+  icon: 'terminal'
+  color: 'blue'
+
+runs:
+  using: 'composite'
+  steps:
+    - shell: bash
+      run: |
+        opam install dune --yes
+        opam exec -- dune build || true
+        for pkg in $(opam show . --field=name); do
+          opam pin $pkg.dev . --no-action
+          opam depext $pkg.dev --yes --with-doc --with-test
+          opam install $pkg.dev --yes --deps-only --with-doc --with-test
+        done
+        ## FIXME: The caught failure of dune build is here to mitigate #4487.
